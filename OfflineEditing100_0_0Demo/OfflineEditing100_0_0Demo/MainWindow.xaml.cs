@@ -1,4 +1,5 @@
-﻿using Esri.ArcGISRuntime.Geometry;
+﻿using Esri.ArcGISRuntime.Data;
+using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Tasks.Offline;
 using Esri.ArcGISRuntime.UI;
@@ -68,8 +69,10 @@ namespace OfflineEditing100_0_0Demo
             // start the job and report the job ID
             generateGdbJob.Start();
             Console.WriteLine("Submitted job #" + generateGdbJob.ServerJobId + " to create local geodatabase");
-        }
 
+           
+
+        }
 
         // handler for the JobChanged event
         private void OnGenerateGdbJobChanged(object sender, EventArgs e)
@@ -105,58 +108,28 @@ namespace OfflineEditing100_0_0Demo
             }
         }
 
-        private void SyncGDB_Click(object sender, RoutedEventArgs e)
+        private async void Button_Click(object sender, RoutedEventArgs e)
         {
+            Geodatabase gdb = await Geodatabase.OpenAsync(@"C:\Temp\100_0_0Demo\WildlifeLocal.geodatabase");
 
-        }
+            var table = gdb.GeodatabaseFeatureTables.First();
+            await table.LoadAsync();
 
-        // function to submit a geodatabase synchronization job 
-        // the URL for the feature service and the path to the local geodatabase are passed in
-        public async Task SyncronizeEditsAsync(string serviceUrl, string geodatabasePath)
-        {
-            // create sync parameters
-            var taskParameters = new SyncGeodatabaseParameters()
-            {
-                RollbackOnFailure = true,
-                GeodatabaseSyncDirection = SyncDirection.Bidirectional
-            };
+            var lyr = new FeatureLayer();
+            lyr.Name = table.TableName;
+            lyr.Id = table.TableName;
+            lyr.FeatureTable = table;
 
+            //{
+            //    Id = table.TableName,
+            //    Name = table.TableName,
+            //    //DisplayName = table.Name,
+            //    FeatureTable = table
+            //};
 
-            // create a sync task with the URL of the feature service to sync
-            var syncTask = await GeodatabaseSyncTask.CreateAsync(new Uri(serviceUrl));
+            
 
-
-            // open the local geodatabase
-            var gdb = await Esri.ArcGISRuntime.Data.Geodatabase.OpenAsync(geodatabasePath);
-
-
-            // create a synchronize geodatabase job, pass in the parameters and the geodatabase
-            SyncGeodatabaseJob job = syncTask.SyncGeodatabase(taskParameters, gdb);
-
-
-            // handle the JobChanged event for the job
-            job.JobChanged += (s, e) =>
-            {
-                // report changes in the job status
-                if (job.Status == Esri.ArcGISRuntime.Tasks.JobStatus.Succeeded)
-                {
-                    // report success ...
-                    statusMessage = "Synchronization is complete!";
-                }
-                else if (job.Status == Esri.ArcGISRuntime.Tasks.JobStatus.Failed)
-                {
-                    // report failure ...
-                    statusMessage = job.Error.Message;
-                }
-                else
-                {
-                    statusMessage = "Sync in progress ...";
-                }
-            };
-
-
-            // await the completion of the job
-            var result = await job.GetResultAsync();
+            mv.Map.OperationalLayers.Add(lyr);
         }
 
         // Map initialization logic is contained in MapViewModel.cs
