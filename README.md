@@ -1,2 +1,2 @@
 # UCDemoRuntime100
-This is a repo to update out ArcGIS Runtime SDK for .NET Demos.
+This repository contains a sample that generates and downloads a geodatabase from a feature service.
